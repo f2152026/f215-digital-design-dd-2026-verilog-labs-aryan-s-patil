@@ -35,6 +35,25 @@ module cla64_flat(
   // ---------------------------------------------------------------------
   // Step 2: the 64 direct carry equations -- YOUR TASK
   //
+  function automatic carry_bit;
+    input integer   k;
+    input [63:0]    pp, gg;
+    input           cn;
+    integer j, m;
+    reg     term;
+    begin
+      term = cn;
+      for (m = 0; m <= k-1; m = m + 1)
+        term = term & pp[m];
+      carry_bit = term;
+      for (j = k-1; j >= 0; j = j - 1) begin
+        term = gg[j];
+        for (m = k-1; m > j; m = m - 1)
+          term = term & pp[m];
+        carry_bit = carry_bit | term;
+      end
+    end
+  endfunction
   // Unlike P and G, these are NOT uniform: Ck needs k+1 product terms,
   // each one literal longer than the last (see Tutorial 3's derivation).
   // Writing all 64 of these by hand is extremely tedious and error-prone,
@@ -60,11 +79,17 @@ module cla64_flat(
   // both checks.
   //
   // TODO: paste your verified assign statements for c[1] through c[64] here.
+  generate
+    for (i = 1; i <= 64; i = i + 1) begin : gen_c
+      assign #(2) c[i] = carry_bit(i, p, g, cin);
+    end
+  endgenerate
 
   assign cout = c[64];
 
   // ---------------------------------------------------------------------
   // Step 3: sum bits
+    assign #(2) sum = p ^ {c[63:1], cin};
   // ---------------------------------------------------------------------
   // TODO: assign #(2) sum = p ^ {c[63:1], cin};
 
